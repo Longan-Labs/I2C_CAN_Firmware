@@ -60,4 +60,4 @@ SOFTWARE.
 If you have any question, please feel free to contact [support@longan-labs.cc](support@longan-labs.cc)
 
 
-[![Analytics](https://ga-beacon.appspot.com/UA-101965714-1/Longan_CANFD)](https://github.com/igrigorik/ga-beacon)
+[![Analytics](https://ga-beacon.appspot.com/UA-101965714-1/I2C_CAN_Firmware)](https://github.com/igrigorik/ga-beacon)
