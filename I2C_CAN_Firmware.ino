@@ -22,7 +22,7 @@
     #define CAN_666KBPS         17
     #define CAN_1000KBPS        18
 */
-   
+
 #include <mcp_can.h>
 #include <SPI.h>
 #include <Wire.h>
@@ -30,6 +30,7 @@
 #include "I2C_CAN_dfs.h"
 
 #define  MAX_RECV_CAN_LEN       8          // BUF FOR CAN FRAME RECVING
+#define  EEPADDR_TESTMODE       99
 
 unsigned char can_frame_dta[MAX_RECV_CAN_LEN][16];
 int cnt_can_frame_dta       = 0;
@@ -64,10 +65,108 @@ unsigned char makeCheckSum(unsigned char *dta, int len)
     return sum;
 }
 
+void blinkTestMode()
+{
+    static unsigned long timer_s = millis();
+    if(millis()-timer_s < 100)return;
+    timer_s = millis();
+    
+  
+    digitalWrite(3, 1-digitalRead(3));
+}
+
+void testModeCANSend()
+{
+  static unsigned long timer_s = millis();
+  if(millis()-timer_s < 500)return;
+  timer_s = millis();
+  
+  unsigned char stmp[8] = {0x55, 0xff, 0x55, 0xaa, 0x0f, 0x5a, 0xfa, 0xf5};
+  CAN.sendMsgBuf(0x00, 0, 8, stmp);
+}
+
+void testMode()
+{
+    if(EEPROM.read(EEPADDR_TESTMODE) == 0xAB)return;
+    
+    //pinMode(0, OUTPUT);
+    //pinMode(1, INPUT);
+    pinMode(3, OUTPUT);
+    //Serial.begin(9600);
+
+    pinMode(A4, INPUT);
+    pinMode(A5, OUTPUT);
+    int cnt = 0;
+PINTEST:
+    //Serial.print("hello");
+
+    unsigned char flgPinTest = 1;     // 0 fail, 1 ok
+    unsigned long timer_s = millis();
+
+    
+
+    unsigned char str[10];
+    unsigned char len = 0;
+
+    digitalWrite(A5, HIGH);
+    
+    delay(10);
+
+    if(HIGH != digitalRead(A4))     // test ok
+    {
+        flgPinTest = 0;
+    }
+
+    digitalWrite(A5, LOW);
+    delay(10);
+    
+    if(LOW != digitalRead(A4))     // test ok
+    {
+        flgPinTest = 0;
+    }
+    
+    if(!flgPinTest)     // pin test fail
+    {
+        EEPROM.write(EEPADDR_TESTMODE, 0);
+        while(1)
+        {
+            digitalWrite(3, HIGH);
+            delay(50);
+            digitalWrite(3, LOW);
+            delay(200);
+            digitalWrite(3, HIGH);
+            delay(50);
+            digitalWrite(3, LOW);
+            delay(700);
+        }
+    }
+    
+    while (CAN_OK != CAN.begin(CAN_500KBPS))              // init can bus : baudrate = 500k
+    {
+        
+        delay(500);
+        digitalWrite(3, 1-digitalRead(3));
+    }
+
+    EEPROM.write(EEPADDR_TESTMODE, 0xAB);
+    while(1)
+    {
+        delay(50);
+        digitalWrite(3, 1-digitalRead(3));
+        testModeCANSend();
+    }
+
+    Serial.begin(9600);
+}
+
+
+
 void setup()
 {
     pinMode(3, OUTPUT);
     Serial.begin(115200);
+
+    //testMode();
     
     for(int i=0; i<20; i++)
     {
@@ -139,11 +238,11 @@ void loop()
                 unsigned long id = 0;
                 
                 id = i2c_dta[1];
-                id <<= 4;
+                id <<= 8; 
                 id += i2c_dta[2];
-                id <<= 4;
+                id <<= 8;
                 id += i2c_dta[3];
-                id <<= 4;
+                id <<= 8;
                 id += i2c_dta[4];
                 
                 int __len = i2c_dta[7];
