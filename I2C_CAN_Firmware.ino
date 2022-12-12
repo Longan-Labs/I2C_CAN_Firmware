@@ -25,14 +25,14 @@
 
 #include <mcp_can.h>
 #include <SPI.h>
-#include <Wire.h>
+#include <SBWire.h> // Replaces standard Wire.h library
 #include <EEPROM.h>
 #include "I2C_CAN_dfs.h"
 
-#define  MAX_RECV_CAN_LEN       8          // BUF FOR CAN FRAME RECVING
+#define  MAX_RECV_CAN_LEN       16          // BUF FOR CAN FRAME RECVING (changed from 8 to 16 to be inline with the longan documentation)
 #define  EEPADDR_TESTMODE       99
 
-unsigned char can_frame_dta[MAX_RECV_CAN_LEN][16];
+unsigned char can_frame_dta[MAX_RECV_CAN_LEN][16]; // Buffer allows for 16 received can messages 
 int cnt_can_frame_dta       = 0;
 int index_can_frame_dta     = 0;
 int index_can_frame_read    = 0;
@@ -43,6 +43,7 @@ MCP_CAN CAN(SPI_CS_PIN);                                    // Set CS pin
 
 #define LEDON()     digitalWrite(3, HIGH)
 #define LEDOFF()    digitalWrite(3, LOW)
+#define LEDTOGGLE() digitalWrite(3, 1 - digitalRead(3))
 
 unsigned char i2c_get_len = 0;
 unsigned char i2c_dta[20];
@@ -70,9 +71,9 @@ void blinkTestMode()
     static unsigned long timer_s = millis();
     if(millis()-timer_s < 100)return;
     timer_s = millis();
-    
+
   
-    digitalWrite(3, 1-digitalRead(3));
+    LEDTOGGLE();
 }
 
 void testModeCANSend()
@@ -145,14 +146,14 @@ PINTEST:
     {
         
         delay(500);
-        digitalWrite(3, 1-digitalRead(3));
+        LEDTOGGLE();
     }
 
     EEPROM.write(EEPADDR_TESTMODE, 0xAB);
     while(1)
     {
         delay(50);
-        digitalWrite(3, 1-digitalRead(3));
+        LEDTOGGLE();
         testModeCANSend();
     }
 
@@ -170,7 +171,7 @@ void setup()
     
     for(int i=0; i<20; i++)
     {
-        digitalWrite(3, 1-digitalRead(3));
+        LEDTOGGLE();
         delay(20);
     }
 
